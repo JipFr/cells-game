@@ -1,6 +1,7 @@
 <template>
 	<main>
-		<p>{{ walls }}</p>
+		<p>{{ colors }}</p>
+		<p>{{ turn }}</p>
 		<p><strong>Width:</strong> {{ width }}</p>
 		<p><strong>Height:</strong> {{ height }}</p>
 		<div class="cells">
@@ -12,19 +13,22 @@
 				>
 					<div
 						class="top-wall wall"
-						:class="walls[x]?.[y - 1]?.top ? '' : 'other-wall'"
+						:class="e(x, y - 1)?.top ? '' : 'other-wall'"
+						:style="e(x, y - 1).top && `--c: ${colors[e(x, y - 1).top - 1]}`"
 						@click="() => doToggle(x, y - 1, 'top')"
 					></div>
 
 					<div
 						class="left-wall wall"
-						:class="walls[x - 1]?.[y]?.left ? '' : 'other-wall'"
+						:class="e(x - 1, y)?.left ? '' : 'other-wall'"
+						:style="e(x - 1, y).left && `--c: ${colors[e(x - 1, y).left - 1]}`"
 						@click="() => doToggle(x - 1, y, 'left')"
 					></div>
 
 					<div
 						class="bottom-wall wall"
 						:class="walls[x]?.[y]?.top ? '' : 'other-wall'"
+						:style="e(x, y).top && `--c: ${colors[e(x, y).top - 1]}`"
 						@click="() => doToggle(x, y, 'top')"
 					></div>
 
@@ -33,7 +37,8 @@
 
 				<div
 					class="right-wall wall"
-					:class="walls[width]?.[y]?.left ? '' : 'other-wall'"
+					:class="e(width, y)?.left ? '' : 'other-wall'"
+					:style="e(width, y).left && `--c: ${colors[e(width, y).left - 1]}`"
 					@click="() => doToggle(width, y, 'left')"
 				></div>
 			</div>
@@ -86,11 +91,10 @@ main {
 .wall {
 	position: absolute;
 	--s: 10px;
-	background: lime;
+	background: var(--c, linear-gradient(to right, green, orange));
 
 	&.other-wall {
 		background: transparent;
-		cursor: pointer;
 
 		&:hover {
 			background: var(--border);
@@ -125,7 +129,7 @@ main {
 
 	&:hover {
 		--s: 20px;
-		background: green;
+		cursor: pointer;
 	}
 }
 </style>
@@ -137,13 +141,25 @@ import { ref, defineComponent } from "vue";
 // Import components
 import Button from "~/components/util/Button.vue";
 
+// Types
+type Direction = "left" | "top";
+
 export default defineComponent({
 	components: {
 		Button,
 	},
 	setup: () => {
-		const width = ref(10);
+		const width = ref(5);
 		const height = ref(5);
+		const colors = ref([
+			"rgb(255, 222, 91)",
+			"rgb(175, 82, 222)",
+			"rgb(255, 45, 85)",
+			"rgb(52, 199, 89)",
+		]);
+
+		const playerCount = ref(2);
+		const turn = ref(1);
 
 		const walls = ref(
 			Array(width.value + 1)
@@ -155,15 +171,19 @@ export default defineComponent({
 				)
 		);
 
-		function doToggle(x: number, y: number, dir: "left" | "top") {
-			console.log(x, y, dir);
-			if (walls.value[x][y][dir] === 0) {
-				walls.value[x][y][dir] = 1;
-				console.log(1);
-			} else if (walls.value[x][y][dir]) {
-				walls.value[x][y][dir] = 0;
-				console.log(2);
+		function doToggle(x: number, y: number, dir: Direction) {
+			// console.log(x, y, dir);
+			if (walls.value[x][y][dir] == 0) {
+				walls.value[x][y][dir] = turn.value;
+				console.log(turn.value);
+				turn.value++;
+				turn.value = ((turn.value - 1) % playerCount.value) + 1;
+				console.log(turn.value, "-");
 			}
+		}
+
+		function e(x: number, y: number) {
+			return walls.value[x]?.[y];
 		}
 
 		return {
@@ -171,6 +191,9 @@ export default defineComponent({
 			height,
 			walls,
 			doToggle,
+			colors,
+			e,
+			turn,
 		};
 	},
 });
