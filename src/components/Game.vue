@@ -15,7 +15,9 @@
 						<div
 							class="top-wall wall"
 							:class="e(x, y - 1)?.top ? '' : 'other-wall'"
-							:style="e(x, y - 1).top && `--c: ${colors[e(x, y - 1).top - 1]}`"
+							:style="
+								e(x, y - 1).top && `--c: ${colors[e(x, y - 1).top.player - 1]}`
+							"
 							@click="() => doToggle(x, y - 1, 'top')"
 						></div>
 
@@ -23,7 +25,8 @@
 							class="left-wall wall"
 							:class="e(x - 1, y)?.left ? '' : 'other-wall'"
 							:style="
-								e(x - 1, y).left && `--c: ${colors[e(x - 1, y).left - 1]}`
+								e(x - 1, y).left &&
+								`--c: ${colors[e(x - 1, y).left.player - 1]}`
 							"
 							@click="() => doToggle(x - 1, y, 'left')"
 						></div>
@@ -31,7 +34,7 @@
 						<div
 							class="bottom-wall wall"
 							:class="walls[x]?.[y]?.top ? '' : 'other-wall'"
-							:style="e(x, y).top && `--c: ${colors[e(x, y).top - 1]}`"
+							:style="e(x, y).top && `--c: ${colors[e(x, y).top.player - 1]}`"
 							@click="() => doToggle(x, y, 'top')"
 						></div>
 
@@ -41,7 +44,9 @@
 					<div
 						class="right-wall wall"
 						:class="e(width, y)?.left ? '' : 'other-wall'"
-						:style="e(width, y).left && `--c: ${colors[e(width, y).left - 1]}`"
+						:style="
+							e(width, y).left && `--c: ${colors[e(width, y).left.player - 1]}`
+						"
 						@click="() => doToggle(width, y, 'left')"
 					></div>
 				</div>
@@ -229,6 +234,11 @@ import xIcon from "@icons/x.svg";
 // Types
 type Direction = "left" | "top";
 
+interface Cell {
+	player: number;
+	placedAt: number;
+}
+
 export default defineComponent({
 	components: {
 		Button,
@@ -238,7 +248,7 @@ export default defineComponent({
 		xIcon,
 	},
 	setup: () => {
-		const width = ref(5);
+		const width = ref(10);
 		const height = ref(5);
 		const colors = ref([
 			"rgb(255, 222, 91)",
@@ -247,23 +257,26 @@ export default defineComponent({
 			"rgb(52, 199, 89)",
 		]);
 
-		const playerCount = ref(colors.value.length);
+		const playerCount = ref(2);
 		const turn = ref(1);
 
-		const walls = ref(
+		const walls = ref<{ left: Cell | null; top: Cell | null }[][]>(
 			Array(width.value + 1)
-				.fill(0)
+				.fill(false)
 				.map((_) =>
 					Array(height.value + 1)
-						.fill(0)
-						.map((v) => ({ left: 0, top: 0 }))
+						.fill(false)
+						.map((_) => ({ left: null, top: null }))
 				)
 		);
 
 		function doToggle(x: number, y: number, dir: Direction) {
 			// console.log(x, y, dir);
-			if (walls.value[x][y][dir] == 0) {
-				walls.value[x][y][dir] = turn.value;
+			if (walls.value[x][y][dir] == null) {
+				walls.value[x][y][dir] = {
+					player: turn.value,
+					placedAt: Date.now(),
+				};
 				console.log(turn.value);
 				turn.value++;
 				turn.value = ((turn.value - 1) % playerCount.value) + 1;
