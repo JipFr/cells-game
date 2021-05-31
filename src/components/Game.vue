@@ -27,15 +27,18 @@
 						v-for="x of width"
 						:key="`column-${x}`"
 						:style="
-							filledSquares[`${x}-${y}`] &&
-							`--cell-bg: ${colors[filledSquares[`${x}-${y}`] - 1]}`
+							(filledSquares[`${x}-${y}`] &&
+								`--cell-bg: ${colors[filledSquares[`${x}-${y}`] - 1]}`) ??
+							''
 						"
 					>
 						<div
 							class="top-wall wall"
 							:class="e(x, y - 1)?.top ? '' : 'other-wall'"
 							:style="
-								e(x, y - 1).top && `--c: ${colors[e(x, y - 1).top.player - 1]}`
+								(e(x, y - 1).top &&
+									`--c: ${colors[(e(x, y - 1)?.top?.player ?? 0) - 1]}`) ??
+								''
 							"
 							@click="() => doToggle(x, y - 1, 'top')"
 						></div>
@@ -44,8 +47,9 @@
 							class="left-wall wall"
 							:class="e(x - 1, y)?.left ? '' : 'other-wall'"
 							:style="
-								e(x - 1, y).left &&
-								`--c: ${colors[e(x - 1, y).left.player - 1]}`
+								(e(x - 1, y).left &&
+									`--c: ${colors[(e(x - 1, y)?.left?.player || 1) - 1]}`) ??
+								''
 							"
 							@click="() => doToggle(x - 1, y, 'left')"
 						></div>
@@ -53,7 +57,11 @@
 						<div
 							class="bottom-wall wall"
 							:class="walls[x]?.[y]?.top ? '' : 'other-wall'"
-							:style="e(x, y).top && `--c: ${colors[e(x, y).top.player - 1]}`"
+							:style="
+								(e(x, y).top &&
+									`--c: ${colors[(e(x, y)?.top?.player || 1) - 1]}`) ??
+								''
+							"
 							@click="() => doToggle(x, y, 'top')"
 						></div>
 
@@ -71,7 +79,9 @@
 						class="right-wall wall"
 						:class="e(width, y)?.left ? '' : 'other-wall'"
 						:style="
-							e(width, y).left && `--c: ${colors[e(width, y).left.player - 1]}`
+							(e(width, y).left &&
+								`--c: ${colors[(e(width, y)?.left?.player ?? 1) - 1]}`) ??
+							''
 						"
 						@click="() => doToggle(width, y, 'left')"
 					></div>
