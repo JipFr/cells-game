@@ -1,5 +1,9 @@
 <template>
-	<div :style="`--c: ${colors[id - 1]}`">
+	<div
+		class="player-icon"
+		:class="`player-${id}`"
+		:style="`--c: ${colors[id - 1]}`"
+	>
 		<circle-icon v-if="id === 1" />
 		<square-icon v-else-if="id === 2" />
 		<triangle-icon v-else-if="id === 3" />
@@ -7,7 +11,7 @@
 	</div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 svg {
 	display: block;
 }

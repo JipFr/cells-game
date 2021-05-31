@@ -5,8 +5,21 @@
 				<p><strong>Width:</strong> {{ width }}</p>
 				<p><strong>Height:</strong> {{ height }}</p>
 			</div>
-			{{ filledSquares }}
-			{{ points }}
+			<div class="info">
+				<div
+					class="player-points"
+					v-for="player of Object.keys(Array(playerCount).fill(0))"
+					:key="`score-${player}`"
+				>
+					Player
+					<player-icon
+						class="do-color"
+						:id="Number(player) + 1"
+						:colors="colors"
+					/>:
+					{{ points[Number(player) + 1] || 0 }}
+				</div>
+			</div>
 			<div class="cells">
 				<div class="row" v-for="y of height" :key="`row-${y}`">
 					<div
@@ -81,6 +94,19 @@
 	</main>
 </template>
 
+<style lang="scss">
+.player-points {
+	display: flex;
+	align-items: center;
+	margin: 10px 0;
+
+	svg {
+		margin: 0;
+		margin-left: 10px;
+	}
+}
+</style>
+
 <style lang="scss" scoped>
 main {
 	width: 90%;
@@ -141,6 +167,7 @@ main {
 	position: absolute;
 	--s: 10px;
 	background: var(--c, linear-gradient(to right, green, orange));
+	box-shadow: 0 0 10px var(--c);
 
 	&.other-wall {
 		background: transparent;
@@ -204,6 +231,10 @@ main {
 			background: var(--c);
 			color: white;
 		}
+
+		&.is-turn .player-1 {
+			color: black;
+		}
 	}
 }
 
@@ -255,9 +286,9 @@ export default defineComponent({
 		const width = ref(10);
 		const height = ref(7);
 		const colors = ref([
-			"rgb(255, 222, 91)",
-			"rgb(175, 82, 222)",
-			"black",
+			"rgb(255, 243, 195)",
+			"rgb(22, 45, 250)",
+			"#EA60F0",
 			"rgb(52, 199, 89)",
 		]);
 
