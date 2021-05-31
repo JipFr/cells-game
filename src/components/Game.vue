@@ -1,48 +1,68 @@
 <template>
-	<main>
-		<p>{{ colors }}</p>
-		<p>{{ turn }}</p>
-		<p><strong>Width:</strong> {{ width }}</p>
-		<p><strong>Height:</strong> {{ height }}</p>
-		<div class="cells">
-			<div class="row" v-for="y of height" :key="`row-${y}`">
-				<div
-					class="cell-wrapper column"
-					v-for="x of width"
-					:key="`column-${x}`"
-				>
+	<main class="do-layout">
+		<div class="main-content">
+			<div class="info">
+				<p><strong>Width:</strong> {{ width }}</p>
+				<p><strong>Height:</strong> {{ height }}</p>
+			</div>
+			<div class="cells">
+				<div class="row" v-for="y of height" :key="`row-${y}`">
 					<div
-						class="top-wall wall"
-						:class="e(x, y - 1)?.top ? '' : 'other-wall'"
-						:style="e(x, y - 1).top && `--c: ${colors[e(x, y - 1).top - 1]}`"
-						@click="() => doToggle(x, y - 1, 'top')"
-					></div>
+						class="cell-wrapper column"
+						v-for="x of width"
+						:key="`column-${x}`"
+					>
+						<div
+							class="top-wall wall"
+							:class="e(x, y - 1)?.top ? '' : 'other-wall'"
+							:style="e(x, y - 1).top && `--c: ${colors[e(x, y - 1).top - 1]}`"
+							@click="() => doToggle(x, y - 1, 'top')"
+						></div>
+
+						<div
+							class="left-wall wall"
+							:class="e(x - 1, y)?.left ? '' : 'other-wall'"
+							:style="
+								e(x - 1, y).left && `--c: ${colors[e(x - 1, y).left - 1]}`
+							"
+							@click="() => doToggle(x - 1, y, 'left')"
+						></div>
+
+						<div
+							class="bottom-wall wall"
+							:class="walls[x]?.[y]?.top ? '' : 'other-wall'"
+							:style="e(x, y).top && `--c: ${colors[e(x, y).top - 1]}`"
+							@click="() => doToggle(x, y, 'top')"
+						></div>
+
+						<div class="cell">{{ x }} {{ y }}</div>
+					</div>
 
 					<div
-						class="left-wall wall"
-						:class="e(x - 1, y)?.left ? '' : 'other-wall'"
-						:style="e(x - 1, y).left && `--c: ${colors[e(x - 1, y).left - 1]}`"
-						@click="() => doToggle(x - 1, y, 'left')"
+						class="right-wall wall"
+						:class="e(width, y)?.left ? '' : 'other-wall'"
+						:style="e(width, y).left && `--c: ${colors[e(width, y).left - 1]}`"
+						@click="() => doToggle(width, y, 'left')"
 					></div>
-
-					<div
-						class="bottom-wall wall"
-						:class="walls[x]?.[y]?.top ? '' : 'other-wall'"
-						:style="e(x, y).top && `--c: ${colors[e(x, y).top - 1]}`"
-						@click="() => doToggle(x, y, 'top')"
-					></div>
-
-					<div class="cell">{{ x }} {{ y }}</div>
 				</div>
-
-				<div
-					class="right-wall wall"
-					:class="e(width, y)?.left ? '' : 'other-wall'"
-					:style="e(width, y).left && `--c: ${colors[e(width, y).left - 1]}`"
-					@click="() => doToggle(width, y, 'left')"
-				></div>
 			</div>
 		</div>
+		<aside>
+			<div class="players">
+				<div
+					class="color-btn player-display"
+					v-for="i of playerCount"
+					:key="`player-${i}`"
+					:style="`--c: ${colors[(i - 1) % colors.length]}`"
+					:class="turn === i ? 'is-turn' : ''"
+				>
+					<circle-icon v-if="i === 1" />
+					<square-icon v-else-if="i === 2" />
+					<triangle-icon v-else-if="i === 3" />
+					<x-icon v-else-if="i === 4" />
+				</div>
+			</div>
+		</aside>
 	</main>
 </template>
 
@@ -52,12 +72,25 @@ main {
 	margin: 40px auto;
 	max-width: 1300px;
 }
+.do-layout {
+	display: grid;
+	grid-template-columns: 1fr 250px;
+	grid-gap: 20px;
+}
+
+.info {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+	grid-gap: 10px;
+}
 
 .cells {
 	width: 100%;
-	border-top: 1px solid var(--border);
-	border-right: 1px solid var(--border);
+	--border-size: 1px;
+	border: var(--border-size) solid var(--border);
 	position: relative;
+	border-radius: 10px;
+	overflow: hidden;
 
 	.row {
 		display: flex;
@@ -68,12 +101,12 @@ main {
 		position: relative;
 	}
 
-	.row .cell {
-		border-bottom: 1px solid var(--border);
+	.row:not(:last-child) {
+		border-bottom: var(--border-size) solid var(--border);
 	}
 
-	.column {
-		border-left: 1px solid var(--border);
+	.column + .column {
+		border-left: var(--border-size) solid var(--border);
 	}
 }
 
@@ -82,7 +115,7 @@ main {
 	width: 100%;
 }
 .cell {
-	height: 70px;
+	height: 100px;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -132,6 +165,52 @@ main {
 		cursor: pointer;
 	}
 }
+
+.players {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+	grid-gap: 10px;
+
+	.player-display {
+		// background: var(--c);
+		display: flex;
+		justify-content: center;
+		padding: 20px;
+		border-radius: 9px;
+		position: relative;
+		border: 3px solid var(--c);
+
+		svg {
+			display: block;
+		}
+
+		&.is-turn {
+			background: var(--c);
+			color: white;
+		}
+	}
+}
+
+@media (max-width: 900px) {
+	.do-layout {
+		grid-template-columns: 100%;
+	}
+	.players {
+		background: var(--body);
+		position: fixed;
+		left: 0;
+		top: 0;
+		width: 100%;
+		padding: 5px 50px;
+		box-sizing: border-box;
+		grid-template-columns: repeat(auto-fit, minmax(1px, 1fr));
+		border-bottom: 1px solid var(--border);
+
+		.player-display {
+			padding: 10px;
+		}
+	}
+}
 </style>
 
 <script lang="ts">
@@ -141,12 +220,22 @@ import { ref, defineComponent } from "vue";
 // Import components
 import Button from "~/components/util/Button.vue";
 
+// Import icons
+import CircleIcon from "@icons/circle.svg";
+import TriangleIcon from "@icons/triangle.svg";
+import SquareIcon from "@icons/square.svg";
+import xIcon from "@icons/x.svg";
+
 // Types
 type Direction = "left" | "top";
 
 export default defineComponent({
 	components: {
 		Button,
+		CircleIcon,
+		TriangleIcon,
+		SquareIcon,
+		xIcon,
 	},
 	setup: () => {
 		const width = ref(5);
@@ -158,7 +247,7 @@ export default defineComponent({
 			"rgb(52, 199, 89)",
 		]);
 
-		const playerCount = ref(2);
+		const playerCount = ref(colors.value.length);
 		const turn = ref(1);
 
 		const walls = ref(
@@ -194,6 +283,7 @@ export default defineComponent({
 			colors,
 			e,
 			turn,
+			playerCount,
 		};
 	},
 });
