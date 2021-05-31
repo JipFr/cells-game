@@ -5,12 +5,18 @@
 				<p><strong>Width:</strong> {{ width }}</p>
 				<p><strong>Height:</strong> {{ height }}</p>
 			</div>
+			{{ filledSquares }}
+			{{ points }}
 			<div class="cells">
 				<div class="row" v-for="y of height" :key="`row-${y}`">
 					<div
 						class="cell-wrapper column"
 						v-for="x of width"
 						:key="`column-${x}`"
+						:style="
+							filledSquares[`${x}-${y}`] &&
+							`--cell-bg: ${colors[filledSquares[`${x}-${y}`] - 1]}`
+						"
 					>
 						<div
 							class="top-wall wall"
@@ -38,7 +44,14 @@
 							@click="() => doToggle(x, y, 'top')"
 						></div>
 
-						<div class="cell">{{ x }} {{ y }}</div>
+						<div class="cell">
+							<player-icon
+								v-if="filledSquares[`${x}-${y}`]"
+								class="do-color"
+								:id="filledSquares[`${x}-${y}`]"
+								:colors="colors"
+							/>
+						</div>
 					</div>
 
 					<div
@@ -61,10 +74,7 @@
 					:style="`--c: ${colors[(i - 1) % colors.length]}`"
 					:class="turn === i ? 'is-turn' : ''"
 				>
-					<circle-icon v-if="i === 1" />
-					<square-icon v-else-if="i === 2" />
-					<triangle-icon v-else-if="i === 3" />
-					<x-icon v-else-if="i === 4" />
+					<player-icon :id="i" :colors="colors" />
 				</div>
 			</div>
 		</aside>
@@ -124,6 +134,7 @@ main {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	// background: var(--cell-bg, transparent);
 }
 
 .wall {
@@ -139,11 +150,15 @@ main {
 		}
 	}
 
+	&.wall {
+		z-index: 10;
+	}
+
 	&.left-wall,
 	&.right-wall {
 		width: var(--s);
-		height: 100%;
-		top: 0;
+		height: calc(100% + 10px);
+		top: -5px;
 		left: calc(var(--s) / 2 * -1);
 
 		&.right-wall {
@@ -154,10 +169,10 @@ main {
 
 	&.top-wall,
 	&.bottom-wall {
-		width: 100%;
+		width: calc(100% + 10px);
 		height: var(--s);
 		top: calc(var(--s) / 2 * -1);
-		left: 0;
+		left: -5px;
 
 		&.bottom-wall {
 			top: initial;
@@ -184,10 +199,6 @@ main {
 		border-radius: 9px;
 		position: relative;
 		border: 3px solid var(--c);
-
-		svg {
-			display: block;
-		}
 
 		&.is-turn {
 			background: var(--c);
@@ -220,16 +231,10 @@ main {
 
 <script lang="ts">
 // Import Vue stuff
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, computed } from "vue";
 
 // Import components
-import Button from "~/components/util/Button.vue";
-
-// Import icons
-import CircleIcon from "@icons/circle.svg";
-import TriangleIcon from "@icons/triangle.svg";
-import SquareIcon from "@icons/square.svg";
-import xIcon from "@icons/x.svg";
+import PlayerIcon from "~/components/util/PlayerIcon.vue";
 
 // Types
 type Direction = "left" | "top";
@@ -238,26 +243,25 @@ interface Cell {
 	player: number;
 	placedAt: number;
 }
+interface FilledSquares {
+	[key: string]: number;
+}
 
 export default defineComponent({
 	components: {
-		Button,
-		CircleIcon,
-		TriangleIcon,
-		SquareIcon,
-		xIcon,
+		PlayerIcon,
 	},
 	setup: () => {
 		const width = ref(10);
-		const height = ref(5);
+		const height = ref(7);
 		const colors = ref([
 			"rgb(255, 222, 91)",
 			"rgb(175, 82, 222)",
-			"rgb(255, 45, 85)",
+			"black",
 			"rgb(52, 199, 89)",
 		]);
 
-		const playerCount = ref(2);
+		const playerCount = ref(colors.value.length);
 		const turn = ref(1);
 
 		const walls = ref<{ left: Cell | null; top: Cell | null }[][]>(
@@ -277,16 +281,53 @@ export default defineComponent({
 					player: turn.value,
 					placedAt: Date.now(),
 				};
-				console.log(turn.value);
 				turn.value++;
 				turn.value = ((turn.value - 1) % playerCount.value) + 1;
-				console.log(turn.value, "-");
 			}
 		}
 
 		function e(x: number, y: number) {
 			return walls.value[x]?.[y];
 		}
+		let points = ref<FilledSquares>({});
+
+		const filledSquares = computed(() => {
+			let prevPoints = Object.assign({}, points.value);
+			console.log(walls.value);
+			console.clear();
+			points.value = {};
+			console.log(prevPoints);
+
+			let filledSquares: FilledSquares = {};
+			for (let x = 0; x < walls.value.length; x++) {
+				for (let y = 0; y < walls.value[x].length; y++) {
+					let wallList = [
+						walls.value[x]?.[y]?.left,
+						walls.value[x - 1]?.[y]?.left,
+						walls.value[x]?.[y - 1]?.top,
+						walls.value[x]?.[y]?.top,
+					]
+						.filter((v) => v)
+						.sort((a, b) => (b?.placedAt || 0) - (a?.placedAt || 0));
+
+					if (wallList.length === 4) {
+						const playerId = wallList[0]?.player || 0;
+						filledSquares[`${x}-${y}`] = playerId;
+
+						if (!points.value[playerId]) points.value[playerId] = 0;
+						points.value[playerId]++;
+					}
+				}
+			}
+
+			for (let key of Object.keys(points.value)) {
+				if (prevPoints[key] !== points.value[key]) {
+					turn.value = Number(key);
+				}
+			}
+
+			return filledSquares;
+		});
 
 		return {
 			width,
@@ -297,6 +338,8 @@ export default defineComponent({
 			e,
 			turn,
 			playerCount,
+			filledSquares,
+			points,
 		};
 	},
 });
