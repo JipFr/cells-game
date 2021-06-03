@@ -302,7 +302,7 @@ export default defineComponent({
 			"rgb(52, 199, 89)",
 		]);
 
-		const playerCount = ref(colors.value.length);
+		const playerCount = ref(3);
 		const turn = ref(1);
 
 		const walls = ref<{ left: Cell | null; top: Cell | null }[][]>(
